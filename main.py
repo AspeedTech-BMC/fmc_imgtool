@@ -2,6 +2,10 @@
 
 import argparse
 import hashlib
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from os import listdir
 from os import path
 from fmc_hdr import FmcHdr
@@ -32,9 +36,6 @@ def gen_fmc_info(fmc_path) -> FmcInfo:
 
     return fmc_info
 
-def gen_fmc_signature():
-    print("todo")
-
 def gen_prebuilt_info(pb_dir, pb_bin) -> List[PrebuiltInfo]:
     pbs_info = []
 
@@ -63,10 +64,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", metavar="IN", help="input FMC raw binary", required=True)
     parser.add_argument("--output", metavar="OUT", help="output FMC binary with header", required=True)
-    parser.add_argument("--version", metavar="VER", help="Security version number", default=0)
-    parser.add_argument("--ecc-key", metavar="KEY", help="ECDSA384 signing key")
+    parser.add_argument("--version", metavar="VER", help="FMC security version number", default=0)
+    parser.add_argument("--ecc-key", metavar="KEY", help="ECDSA384 signing key (.pem)")
     parser.add_argument("--ecc-key-index", metavar="IDX", help="ECDSA384 signing key index hint", default=0)
-    parser.add_argument("--lms-key", metavar="KEY", help="LMS signing key")
+    parser.add_argument("--lms-key", metavar="KEY", help="LMS signing key (.prv)")
     parser.add_argument("--lms-key-index", metavar="IDX", help="LMS signing key index hint", default=0)
     parser.add_argument("--verbose", help="show detail information", action="store_true", default=False)
     args = parser.parse_args()
@@ -74,31 +75,33 @@ def main():
     fmc_info = gen_fmc_info(args.input)
     pbs_info = gen_prebuilt_info(PREBUILT_DIR, PREBUILT_BIN)
 
-    if args.verbose:
-        print("FMC Size: {}\n"
-              "FMC Dgst: {}\n".format(hex(fmc_info.size), fmc_info.dgst.hex()))
-
-        for pbi in pbs_info:
-            print("PB Type: {} ({})\n"
-                  "PB Name: {}\n"
-                  "PB Size: {}\n"
-                  "PB Dgst: {}\n".format(pbi.type, PrebuiltType(pbi.type).name, pbi.name, hex(pbi.size), pbi.dgst.hex()))
-
     hdr = FmcHdr()
+
     hdr.set_fmc_size(fmc_info.size)
     hdr.set_fmc_digest(fmc_info.dgst)
 
     for pbi in pbs_info:
         hdr.add_prebuilt(pbi.type, pbi.size, pbi.dgst)
 
-    #
-    # TODO: sign FMC header
-    #
+    if args.ecc_key is not None:
+        pem_f = open(args.ecc_key, "rb")
+        pem_d = pem_f.read()
+
+        key = load_pem_private_key(pem_d, password=None)
+        sig = key.sign(hdr.output_body(), ec.ECDSA(hashes.SHA384()))
+        sig_r, sig_s = decode_dss_signature(sig)
+
+        # convert to bytearray
+        sig_r = sig_r.to_bytes(48, byteorder='big')
+        sig_s = sig_s.to_bytes(48, byteorder='big')
+
+        hdr.set_ecc_key_index(args.ecc_key_index)
+        hdr.set_ecc_signature(sig_r, sig_s)
 
     # generate final output: Header || FMC Binary || Prebuilt Binaries
     f = open(args.output, "wb")
 
-    f.write(hdr.output())
+    f.write(hdr.output(args.verbose))
     f.write(fmc_info.data)
     for pbi in pbs_info:
         f.write(pbi.data)
