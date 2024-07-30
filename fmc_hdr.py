@@ -89,11 +89,12 @@ class FmcHdr:
         if len(pb_dgst) < SHA_DGST_LEN:
             raise RuntimeError("invalid prebuilt binary digest length={}".format(len(pb_dgst)))
 
+        # (type, size, dgst)
         self.__prebuilt.append((pb_type, pb_size, pb_dgst[: SHA_DGST_LEN]))
 
-    def output(self):
+    # Binary assembler
+    def output_preamble(self, verbose: bool = False):
         preamble = bytearray(HDR_PREAMBLE_SIZE)
-        body = bytearray(HDR_BODY_SIZE)
 
         tmp = struct.pack("<L2H", self.__magic, self.__ecc_key_index, self.__lms_key_index)
         tmp += self.__ecc_signature
@@ -101,15 +102,55 @@ class FmcHdr:
 
         preamble[: len(tmp)] = tmp
 
+        # print preamble if needed
+        if verbose:
+            print("--------------")
+            print("PREAMBLE")
+            print("--------------")
+            print("MAGIC                    : {}".format(hex(self.__magic)))
+            print("ECC_KEY_INDEX            : {}".format(hex(self.__ecc_key_index)))
+            print("LMS_KEY_INDEX            : {}".format(hex(self.__lms_key_index)))
+            print("ECC_SIGNATURE (32 MSByte): {}".format(self.__ecc_signature.hex()[: 64]))
+            print("LMS_SIGNATURE (32 MSByte): {}".format(self.__lms_signature.hex()[: 64]))
+
+        return preamble
+
+    def output_body(self, verbose : bool = False):
+        body = bytearray(HDR_BODY_SIZE)
+
         tmp = struct.pack("<L", self.__size)[:3]
         tmp += struct.pack("B", self.__svn)
         tmp += self.__sha384_dgst
 
+        if verbose:
+            print("--------------")
+            print("BODY")
+            print("--------------")
+            print("FMC SIZE                 : {}".format(hex(self.__size)))
+            print("FMC SVN                  : {}".format(hex(self.__svn)))
+            print("FMC DIGEST               : {}".format(self.__sha384_dgst.hex()))
+
+        ofst = 0
         for pb in self.__prebuilt:
+            # (type, size, dgst)
             tmp += struct.pack("<L", pb[1])[:3]
             tmp += struct.pack("B", pb[0])
             tmp += pb[2]
 
+            if verbose:
+                print("Prebuilt Type            : {}".format(hex(pb[0])))
+                print("Prebuilt Size            : {}".format(hex(pb[1])))
+                print("Prebuilt Offset          : {}".format(hex(ofst)))
+                print("Prebuilt Digest          : {}".format(pb[2].hex()))
+
+            ofst += pb[1]
+
         body[: len(tmp)] = tmp
+
+        return body
+
+    def output(self, verbose : bool = False):
+        preamble = self.output_preamble(verbose)
+        body = self.output_body(verbose)
 
         return preamble + body
