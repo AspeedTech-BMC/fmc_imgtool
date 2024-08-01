@@ -2,6 +2,8 @@
 
 import argparse
 import hashlib
+import os
+import struct
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
@@ -12,6 +14,8 @@ from fmc_hdr import FmcHdr
 from prebuilt import PrebuiltType
 from prebuilt import PREBUILT_DIR
 from prebuilt import PREBUILT_BIN
+from pyhsslms import HssLmsPrivateKey
+from pyhsslms import HssSignature
 from typing import List
 
 class FmcInfo:
@@ -83,6 +87,7 @@ def main():
     for pbi in pbs_info:
         hdr.add_prebuilt(pbi.type, pbi.size, pbi.dgst)
 
+    # generate ECDSA384 signature
     if args.ecc_key is not None:
         pem_f = open(args.ecc_key, "rb")
         pem_d = pem_f.read()
@@ -97,6 +102,32 @@ def main():
 
         hdr.set_ecc_key_index(args.ecc_key_index)
         hdr.set_ecc_signature(sig_r, sig_s)
+
+    # generate LMS_signature (N24/H15/W4)
+    if args.lms_key is not None:
+        key = HssLmsPrivateKey(os.path.splitext(args.lms_key)[0])
+        hss_sig_bytes = key.sign(hashlib.sha384(hdr.output_body()).digest())
+        hss_sig_level = int.from_bytes(hss_sig_bytes[0 : 4], "big") + 1
+        hss_sig = HssSignature.deserialize(hss_sig_bytes)
+
+        # extract signature parameters
+        sig_q = hss_sig.lms_sig.q
+        sig_ots_type = hss_sig.lms_sig.lmots_sig.type
+        sig_ots_C = hss_sig.lms_sig.lmots_sig.C
+        sig_ots_y = b''.join(hss_sig.lms_sig.lmots_sig.y)
+        sig_tree_type = int.from_bytes(hss_sig.lms_sig.type, "big")
+        sig_tree_path = b''.join(hss_sig.lms_sig.path)
+
+        # assemble signature byte array
+        sig_bytes = b''
+        sig_bytes += struct.pack("<L", sig_q)
+        sig_bytes += sig_ots_type
+        sig_bytes += sig_ots_C
+        sig_bytes += sig_ots_y
+        sig_bytes += struct.pack("<L", sig_tree_type)
+        sig_bytes += sig_tree_path
+
+        hdr.set_lms_signature(sig_bytes)
 
     # generate final output: Header || FMC Binary || Prebuilt Binaries
     f = open(args.output, "wb")
