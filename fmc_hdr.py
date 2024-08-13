@@ -130,7 +130,7 @@ class FmcHdr:
             print("FMC SVN                  : {}".format(hex(self.__svn)))
             print("FMC DIGEST               : {}".format(self.__sha384_dgst.hex()))
 
-        ofst = 0
+        ofst = HDR_SIZE + self.__size
         for pb in self.__prebuilt:
             # (type, size, dgst)
             tmp += struct.pack("<L", pb[1])[:3]
@@ -139,8 +139,8 @@ class FmcHdr:
 
             if verbose:
                 print("Prebuilt Type            : {}".format(hex(pb[0])))
-                print("Prebuilt Size            : {}".format(hex(pb[1])))
                 print("Prebuilt Offset          : {}".format(hex(ofst)))
+                print("Prebuilt Size            : {}".format(hex(pb[1])))
                 print("Prebuilt Digest          : {}".format(pb[2].hex()))
 
             ofst += pb[1]
