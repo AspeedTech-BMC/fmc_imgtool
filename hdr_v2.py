@@ -1,3 +1,4 @@
+from hdr_meta import *
 from prebuilt import PrebuiltType
 import struct
 
@@ -5,7 +6,6 @@ ECC_KEY_LEN = 96            # ECDSA384
 LMS_KEY_LEN = 1620          # LMS_SHA256_N24_H15 + LMOTS_SHA256_N24_W4
 SHA_DGST_LEN = 48           # SHA384
 
-HDR_MAGIC = 0x48545341                          # ASTH
 HDR_PREAMBLE_SIZE = 0x700                       # 1792
 HDR_BODY_SIZE = 0x300                           # 768
 HDR_SIZE = HDR_PREAMBLE_SIZE + HDR_BODY_SIZE    # 2560
@@ -13,10 +13,12 @@ HDR_MAX_SVN = 64                                # correspond to 64-bits bitmap i
 HDR_MAX_KEYID = 16                              # correspond to 16-bits bitmap in OTP
 HDR_MAX_FMCSZ = 0x38000                         # 224KB
 
-class FmcHdr:
+class FmcHdrV2(FmcHdrMeta):
     def __init__(self):
+        super().__init__()
+
         # Preamble fields
-        self.__magic = HDR_MAGIC
+        self.version = 2
         self.__ecc_key_index = 0
         self.__lms_key_index = 0
         self.__ecc_signature = bytearray(ECC_KEY_LEN)
@@ -92,34 +94,37 @@ class FmcHdr:
         # (type, size, dgst)
         self.__prebuilt.append((pb_type, pb_size, pb_dgst[: SHA_DGST_LEN]))
 
-    # Binary assembler
     def output_preamble(self, verbose: bool = False):
         preamble = bytearray(HDR_PREAMBLE_SIZE)
-
-        tmp = struct.pack("<L2H", self.__magic, self.__ecc_key_index, self.__lms_key_index)
-        tmp += self.__ecc_signature
-        tmp += self.__lms_signature
-
-        preamble[: len(tmp)] = tmp
 
         # print preamble if needed
         if verbose:
             print("--------------")
             print("PREAMBLE")
             print("--------------")
-            print("MAGIC                    : {}".format(hex(self.__magic)))
+            print("MAGIC                    : {}".format(hex(self.magic)))
+            print("VERSION                  : {}".format(hex(self.version)))
             print("ECC_KEY_INDEX            : {}".format(hex(self.__ecc_key_index)))
             print("LMS_KEY_INDEX            : {}".format(hex(self.__lms_key_index)))
             print("ECC_SIGNATURE (32 MSByte): {}".format(self.__ecc_signature.hex()[: 64]))
             print("LMS_SIGNATURE (32 MSByte): {}".format(self.__lms_signature.hex()[: 64]))
+
+        tmp = struct.pack("<4L", self.magic, self.version, self.__ecc_key_index, self.__lms_key_index)
+        tmp += self.__ecc_signature
+        tmp += self.__lms_signature
+
+        tmp_len = len(tmp)
+        if tmp_len > HDR_PREAMBLE_SIZE:
+            raise RuntimeError("invalid preamble size={}, expected <= {}".format(tmp_len, HDR_PREAMBLE_SIZE))
+
+        preamble[: tmp_len] = tmp
 
         return preamble
 
     def output_body(self, verbose : bool = False):
         body = bytearray(HDR_BODY_SIZE)
 
-        tmp = struct.pack("<L", self.__size)[:3]
-        tmp += struct.pack("B", self.__svn)
+        tmp = struct.pack("<2L", self.__svn, self.__size)
         tmp += self.__sha384_dgst
 
         if verbose:
@@ -133,8 +138,7 @@ class FmcHdr:
         ofst = HDR_SIZE + self.__size
         for pb in self.__prebuilt:
             # (type, size, dgst)
-            tmp += struct.pack("<L", pb[1])[:3]
-            tmp += struct.pack("B", pb[0])
+            tmp += struct.pack("<2L", pb[0], pb[1])
             tmp += pb[2]
 
             if verbose:
@@ -145,7 +149,11 @@ class FmcHdr:
 
             ofst += pb[1]
 
-        body[: len(tmp)] = tmp
+        tmp_len = len(tmp)
+        if tmp_len > HDR_BODY_SIZE:
+            raise RuntimeError("invalid body size={}, expected <= {}".format(tmp_len, HDR_BODY_SIZE))
+
+        body[: tmp_len] = tmp
 
         return body
 
