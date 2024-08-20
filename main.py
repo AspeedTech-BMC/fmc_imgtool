@@ -127,6 +127,7 @@ def gen_fmc_hdr_v2(fmc_info, pbs_info,
         sig_bytes += struct.pack("<L", sig_tree_type)
         sig_bytes += sig_tree_path
 
+        hdr.set_lms_key_index(lms_key_idx)
         hdr.set_lms_signature(sig_bytes)
 
     return hdr
