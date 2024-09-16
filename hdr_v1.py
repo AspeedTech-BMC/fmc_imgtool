@@ -20,7 +20,7 @@ class FmcHdrV1(FmcHdrMeta):
 
     def set_fmc_size(self, sz: int):
         if sz < 0 or sz > HDR_MAX_FMCSZ:
-            raise RuntimeError("invalid image size={}, maximum {}".format(sz, HDR_MAX_IMGSZ))
+            raise RuntimeError("invalid image size={}, maximum {}".format(sz, HDR_MAX_FMCSZ))
 
         self.__size = sz
 
