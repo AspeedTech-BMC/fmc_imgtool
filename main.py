@@ -36,6 +36,12 @@ def gen_fmc_info(fmc_path, fmc_svn) -> FmcInfo:
     fmc_info.svn = fmc_svn
     fmc_info.data = f.read()
     fmc_info.size = f.tell()
+
+    # force alignment due to the broken design
+    padding = b'\x00' * ((4 - (fmc_info.size & 3)) & 3)
+    fmc_info.data += padding
+    fmc_info.size += len(padding)
+
     fmc_info.dgst = hashlib.sha384(fmc_info.data).digest()
 
     f.close()
@@ -58,6 +64,12 @@ def gen_prebuilt_info(pb_dir, pb_bin) -> List[PrebuiltInfo]:
         pbi.type = pb_bin[pb_name].value
         pbi.data = f.read()
         pbi.size = f.tell()
+
+        # force alignment due to the broken design
+        padding = b'\x00' * ((4 - (pbi.size & 3)) & 3)
+        pbi.data += padding
+        pbi.size += len(padding)
+
         pbi.dgst = hashlib.sha384(pbi.data).digest()
 
         pbs_info.append(pbi)
