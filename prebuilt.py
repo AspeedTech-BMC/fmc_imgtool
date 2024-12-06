@@ -32,6 +32,8 @@ class PrebuiltType(IntEnum):
     DDR5_PMU_TRAIN_DMEM = auto()
     DP_FW = auto()
     UEFI_X64_AST2700 = auto()
+    RK384_PUB_KEY = auto()
+    RSA4096_PUB_KEY = auto()
 
 PREBUILT_DIR = "prebuilt/"
 PREBUILT_BIN = {
@@ -43,4 +45,6 @@ PREBUILT_BIN = {
     "ddr5_pmu_train_dmem.bin"       : PrebuiltType.DDR5_PMU_TRAIN_DMEM,
     "dp_fw.bin"                     : PrebuiltType.DP_FW,
     "uefi_x64_ast2700.bin"          : PrebuiltType.UEFI_X64_AST2700,
+    "../keys/rk384_pub.der"         : PrebuiltType.RK384_PUB_KEY,
+    "../keys/test_bl2_public_4096.der"     : PrebuiltType.RSA4096_PUB_KEY,
 }

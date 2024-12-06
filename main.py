@@ -87,7 +87,7 @@ def gen_prebuilt_info(pb_dir, pb_bin) -> List[PrebuiltInfo]:
         # force alignment due to the broken design
         padding = b'\x00' * ((4 - (pbi.size & 3)) & 3)
         pbi.data += padding
-        pbi.size += len(padding)
+#        pbi.size += len(padding)
 
         pbi.dgst = hashlib.sha384(pbi.data).digest()
 
