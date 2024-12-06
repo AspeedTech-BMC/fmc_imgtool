@@ -34,6 +34,7 @@ class PrebuiltType(IntEnum):
     UEFI_X64_AST2700 = auto()
     RK384_PUB_KEY = auto()
     RSA4096_PUB_KEY = auto()
+    RSA3072_PUB_KEY = auto()
 
 PREBUILT_DIR = "prebuilt/"
 PREBUILT_BIN = {
@@ -47,4 +48,5 @@ PREBUILT_BIN = {
     "uefi_x64_ast2700.bin"          : PrebuiltType.UEFI_X64_AST2700,
     "../keys/rk384_pub.der"         : PrebuiltType.RK384_PUB_KEY,
     "../keys/test_bl2_public_4096.der"     : PrebuiltType.RSA4096_PUB_KEY,
+    "../keys/test_bl2_public_3072.der"     : PrebuiltType.RSA3072_PUB_KEY,
 }
