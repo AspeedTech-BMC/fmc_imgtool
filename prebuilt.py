@@ -33,8 +33,10 @@ class PrebuiltType(IntEnum):
     DP_FW = auto()
     UEFI_X64_AST2700 = auto()
     RK384_PUB_KEY = auto()
+    RK256_PUB_KEY = auto()
     RSA4096_PUB_KEY = auto()
     RSA3072_PUB_KEY = auto()
+    RSA2048_PUB_KEY = auto()
 
 PREBUILT_DIR = "prebuilt/"
 PREBUILT_BIN = {
