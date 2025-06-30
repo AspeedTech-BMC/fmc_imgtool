@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fmc-imgtool"
+version = "0.1.2"
+description = "Tool to generate FMC images"
+authors = [{name = "ASPEED Technology Inc."}]
+readme = "README.md"
+license = { file = "LICENSE" }
+dependencies = [
+  "cryptography",
+  "pyhsslms"
+]
+
+[project.scripts]
+fmc-imgtool = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "hdr_meta", "hdr_v1", "hdr_v2", "prebuilt"]
+

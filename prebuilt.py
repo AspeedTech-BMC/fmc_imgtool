@@ -38,7 +38,6 @@ class PrebuiltType(IntEnum):
     RSA3072_PUB_KEY = auto()
     RSA2048_PUB_KEY = auto()
 
-PREBUILT_DIR = "prebuilt/"
 PREBUILT_BIN = {
     "ddr4_pmu_train_imem.bin"       : PrebuiltType.DDR4_PMU_TRAIN_IMEM,
     "ddr4_pmu_train_dmem.bin"       : PrebuiltType.DDR4_PMU_TRAIN_DMEM,

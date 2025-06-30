@@ -32,7 +32,6 @@ from os import path
 from hdr_v1 import *
 from hdr_v2 import *
 from prebuilt import PrebuiltType
-from prebuilt import PREBUILT_DIR
 from prebuilt import PREBUILT_BIN
 from pyhsslms import HssLmsPrivateKey
 from pyhsslms import HssSignature
@@ -168,11 +167,12 @@ def main():
     parser.add_argument("--ecc-key-index", metavar="IDX", type=int, help="ECDSA384 signing key index hint, Default=0", default=0)
     parser.add_argument("--lms-key", metavar="KEY", help="LMS signing key (.prv)")
     parser.add_argument("--lms-key-index", metavar="IDX", type=int, help="LMS signing key index hint, Default=0", default=0)
+    parser.add_argument("--prebuilt-dir", metavar="DIR", help="prebuilt binaries directory, Default=prebuilt/", default="prebuilt/")
     parser.add_argument("--verbose", help="show detail information", action="store_true", default=False)
     args = parser.parse_args()
 
     fmc_info = gen_fmc_info(args.input, args.svn)
-    pbs_info = gen_prebuilt_info(PREBUILT_DIR, PREBUILT_BIN)
+    pbs_info = gen_prebuilt_info(args.prebuilt_dir, PREBUILT_BIN)
 
     if args.version == 1:
         hdr = gen_fmc_hdr_v1(fmc_info, pbs_info)
