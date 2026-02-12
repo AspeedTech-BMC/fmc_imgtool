@@ -51,15 +51,15 @@ options:
 
 - FMC + Header
 ```bash
-$ python3 main.py --version 2 --input fmc_raw.bin --output fmc.bin
+$ python3 main.py --version 2 --prebuilt bmc-pb/ast2700a1/ --input fmc_raw.bin --output fmc.bin
 ```
 
 - FMC + Header + ECC Signature
 ```bash
-$ python3 main.py --version 2 --input fmc_raw.bin --output fmc.bin --ecc-key pri.pem --ecc-key-index 0
+$ python3 main.py --version 2 --prebuilt bmc-pb/ast2700a1/ --input fmc_raw.bin --output fmc.bin --ecc-key pri.pem --ecc-key-index 0
 ```
 
 - FMC + Header + ECC Signature + LMS Signature
 ```bash
-$ python3 main.py --version 2 --input fmc_raw.bin --output fmc.bin --ecc-key pri.pem --ecc-key-index 0 --lms-key lms_key.prv --lms-key-index 0​
+$ python3 main.py --version 2 --prebuilt bmc-pb/ast2700a1/ --input fmc_raw.bin --output fmc.bin --ecc-key pri.pem --ecc-key-index 0 --lms-key lms_key.prv --lms-key-index 0​
 ```
